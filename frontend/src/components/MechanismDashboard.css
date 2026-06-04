@@ -258,3 +258,56 @@
     grid-template-columns: 1fr;
   }
 }
+.optimal-probabilities {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.optimal-probability-card {
+  padding: 12px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid #e5e7eb;
+}
+
+.optimal-probability-card span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.optimal-probability-card strong {
+  color: #172033;
+  font-size: 20px;
+}
+
+@media (max-width: 850px) {
+  .optimal-probabilities {
+    grid-template-columns: 1fr;
+  }
+}
+.optimal-box .small-compute-button {
+  border: none;
+  border-radius: 14px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, #4f46e5, #2563eb);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.optimal-box .small-compute-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.optimal-box .small-compute-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}

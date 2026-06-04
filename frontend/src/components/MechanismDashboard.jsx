@@ -6,11 +6,17 @@ const API_BASE_URL = "http://localhost:8080/api";
 const AND_SYMBOL = "∧";
 const OR_SYMBOL = "∨";
 
-function MechanismDashboard({ numberOfKeys }) {
+function MechanismDashboard({ numberOfKeys, signals }) {
   const [mode, setMode] = useState("optimal");
   const [currentTerm, setCurrentTerm] = useState([]);
   const [finalMechanism, setFinalMechanism] = useState([]);
   const [error, setError] = useState("");
+
+  const [optimalResult, setOptimalResult] = useState(null);
+  const [optimalLoading, setOptimalLoading] = useState(false);
+
+  const [manualResult, setManualResult] = useState(null);
+  const [manualLoading, setManualLoading] = useState(false);
 
   function clearError() {
     setError("");
@@ -20,25 +26,14 @@ function MechanismDashboard({ numberOfKeys }) {
     clearError();
 
     if (currentTerm.length === 0) {
-      setCurrentTerm([
-        {
-          type: "signal",
-          value: signalNumber,
-        },
-      ]);
+      setCurrentTerm([{ type: "signal", value: signalNumber }]);
       return;
     }
 
     setCurrentTerm([
       ...currentTerm,
-      {
-        type: "operator",
-        value: AND_SYMBOL,
-      },
-      {
-        type: "signal",
-        value: signalNumber,
-      },
+      { type: "operator", value: AND_SYMBOL },
+      { type: "signal", value: signalNumber },
     ]);
   }
 
@@ -55,6 +50,13 @@ function MechanismDashboard({ numberOfKeys }) {
 
   function normalizeSignalList(signalList) {
     return [...signalList].sort((a, b) => a - b).join(",");
+  }
+
+  function signalsPayload() {
+    return signals.map((signal) => ({
+      notComplete: Number(signal.notCompleteness) || 0,
+      notSybilProof: Number(signal.notSybilProof) || 0,
+    }));
   }
 
   async function addTermToMechanism() {
@@ -111,6 +113,7 @@ function MechanismDashboard({ numberOfKeys }) {
 
       setFinalMechanism([...finalMechanism, currentTerm]);
       setCurrentTerm([]);
+      setManualResult(null);
     } catch (err) {
       setError(
         "Could not check dominance. Make sure the Java backend is running on port 8080."
@@ -121,19 +124,91 @@ function MechanismDashboard({ numberOfKeys }) {
 
   function clearFinalMechanism() {
     setFinalMechanism([]);
+    setManualResult(null);
     clearError();
   }
 
-  function computeMechanism() {
+  async function computeManualMechanism() {
     clearError();
 
+    if (!signals || signals.length === 0) {
+      setManualResult(null);
+      setError("Add at least one signal before computing the mechanism.");
+      return;
+    }
+
     if (finalMechanism.length === 0) {
+      setManualResult(null);
       setError("Cannot compute an empty mechanism.");
       return;
     }
 
-    console.log("Mechanism to compute:", finalMechanism);
-    setError("Backend computation will be implemented later.");
+    setManualLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/mechanism/manual/compute`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signals: signalsPayload(),
+          terms: finalMechanism.map((term) => termToSignalList(term)),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `Backend returned status ${response.status}`);
+      }
+
+      setManualResult(data);
+    } catch (err) {
+      setManualResult(null);
+      setError(err.message || "Could not compute manual mechanism.");
+      console.error(err);
+    } finally {
+      setManualLoading(false);
+    }
+  }
+
+  async function loadOptimalMechanism() {
+    clearError();
+
+    if (!signals || signals.length === 0) {
+      setOptimalResult(null);
+      setError("Add at least one signal before computing the optimal mechanism.");
+      return;
+    }
+
+    setOptimalLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/mechanism/optimal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          signals: signalsPayload(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `Backend returned status ${response.status}`);
+      }
+
+      setOptimalResult(data);
+    } catch (err) {
+      setOptimalResult(null);
+      setError(err.message || "Could not compute optimal mechanism.");
+      console.error(err);
+    } finally {
+      setOptimalLoading(false);
+    }
   }
 
   function renderTerm(term) {
@@ -164,6 +239,27 @@ function MechanismDashboard({ numberOfKeys }) {
     ));
   }
 
+  function ProbabilityCards({ result }) {
+    return (
+      <div className="optimal-probabilities">
+        <div className="optimal-probability-card">
+          <span>Successful</span>
+          <strong>{result ? `${result.uniqueness}%` : "-"}</strong>
+        </div>
+
+        <div className="optimal-probability-card">
+          <span>Not Complete</span>
+          <strong>{result ? `${result.notComplete}%` : "-"}</strong>
+        </div>
+
+        <div className="optimal-probability-card">
+          <span>Not Sybil-Proof</span>
+          <strong>{result ? `${result.notSybilProof}%` : "-"}</strong>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="mechanism-card">
       <div className="mechanism-header">
@@ -175,14 +271,20 @@ function MechanismDashboard({ numberOfKeys }) {
         <div className="mode-toggle">
           <button
             className={mode === "optimal" ? "active" : ""}
-            onClick={() => setMode("optimal")}
+            onClick={() => {
+              clearError();
+              setMode("optimal");
+            }}
           >
             Optimal
           </button>
 
           <button
             className={mode === "manual" ? "active" : ""}
-            onClick={() => setMode("manual")}
+            onClick={() => {
+              clearError();
+              setMode("manual");
+            }}
           >
             Manual
           </button>
@@ -191,16 +293,27 @@ function MechanismDashboard({ numberOfKeys }) {
 
       {mode === "optimal" ? (
         <div className="optimal-box">
-          <span className="optimal-label">Optimal mechanism</span>
+          <div className="line-box-header">
+            <span className="optimal-label">Optimal mechanism</span>
 
-          <div className="optimal-result">
-            Backend optimal mechanism will appear here later
+            <button
+              className="small-compute-button"
+              onClick={loadOptimalMechanism}
+              disabled={optimalLoading}
+            >
+              {optimalLoading ? "Computing..." : "Compute"}
+            </button>
           </div>
 
-          <p>
-            Later, this value will be computed by the Java backend according to
-            the number of signals.
-          </p>
+          <div className="optimal-result">
+            {optimalLoading
+              ? "Computing optimal mechanism..."
+              : optimalResult
+              ? optimalResult.mechanism
+              : "Click Compute to find the optimal mechanism"}
+          </div>
+
+          <ProbabilityCards result={optimalResult} />
         </div>
       ) : (
         <div className="manual-builder">
@@ -247,9 +360,10 @@ function MechanismDashboard({ numberOfKeys }) {
 
                   <button
                     className="small-compute-button"
-                    onClick={computeMechanism}
+                    onClick={computeManualMechanism}
+                    disabled={manualLoading}
                   >
-                    Compute
+                    {manualLoading ? "Computing..." : "Compute"}
                   </button>
                 </div>
               </div>
@@ -260,9 +374,11 @@ function MechanismDashboard({ numberOfKeys }) {
             </div>
           </div>
 
-          {error && <div className="mechanism-error">{error}</div>}
+          <ProbabilityCards result={manualResult} />
         </div>
       )}
+
+      {error && <div className="mechanism-error">{error}</div>}
     </section>
   );
 }

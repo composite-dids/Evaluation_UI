@@ -10,7 +10,7 @@ function App() {
   return (
     <main className="page">
       <KeysDashboard keys={keys} setKeys={setKeys} />
-      <MechanismDashboard numberOfKeys={keys.length} />
+      <MechanismDashboard numberOfKeys={keys.length} signals={keys} />
     </main>
   );
 }
