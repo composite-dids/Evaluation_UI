@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import "./DeployPage.css";
 
-const API_BASE_URL = "https://evaluation-ui-backend.onrender.com";
+const API_BASE_URL = "https://evaluation-ui-backend.onrender.com/api";
 
 const DEPLOY_OPTIONS = ["GitHub", "Gmail", "arXiv", "Ether"];
 
