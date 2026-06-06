@@ -1,0 +1,25 @@
+# Frontend dependencies
+frontend/node_modules/
+node_modules/
+
+# Frontend build output
+frontend/dist/
+dist/
+
+# Backend build output
+backend/target/
+target/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# IDE files
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.local
