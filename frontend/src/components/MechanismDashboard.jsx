@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./MechanismDashboard.css";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "https://evaluation-ui-backend.onrender.com/api";
 
 const AND_SYMBOL = "∧";
 const OR_SYMBOL = "∨";

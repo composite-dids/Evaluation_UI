@@ -2,7 +2,7 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.1",
-  "homepage": "https://DorMalka.github.io/composite-dids/Evaluation_UI",
+  "homepage": "https://composite-dids.github.io/Evaluation_UI",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",

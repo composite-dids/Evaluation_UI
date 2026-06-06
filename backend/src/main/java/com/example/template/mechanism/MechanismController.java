@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/mechanism")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {
+        "http://localhost:5173",
+        "https://composite-dids.github.io"
+})
 public class MechanismController {
 
     private final MechanismService mechanismService;
