@@ -2,8 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import "./DeployPage.css";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL = "https://evaluation-ui-backend.onrender.com";
 
 const DEPLOY_OPTIONS = ["GitHub", "Gmail", "arXiv", "Ether"];
 
