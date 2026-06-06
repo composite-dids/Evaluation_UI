@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./MechanismDashboard.css";
 
-const API_BASE_URL = "https://evaluation-ui-backend.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 const AND_SYMBOL = "∧";
 const OR_SYMBOL = "∨";
@@ -17,6 +17,7 @@ function MechanismDashboard({ numberOfKeys, signals }) {
 
   const [manualResult, setManualResult] = useState(null);
   const [manualLoading, setManualLoading] = useState(false);
+  const [deploying, setDeploying] = useState(false);
 
   function clearError() {
     setError("");
@@ -115,9 +116,7 @@ function MechanismDashboard({ numberOfKeys, signals }) {
       setCurrentTerm([]);
       setManualResult(null);
     } catch (err) {
-      setError(
-        "Could not check dominance. Make sure the Java backend is running on port 8080."
-      );
+      setError("Could not check dominance. Make sure the deployed backend is live.");
       console.error(err);
     }
   }
@@ -211,6 +210,53 @@ function MechanismDashboard({ numberOfKeys, signals }) {
     }
   }
 
+  function openDeployPage(result, terms) {
+    clearError();
+
+    if (deploying) {
+      return;
+    }
+
+    if (!result) {
+      setError("Compute the mechanism before deploying it.");
+      return;
+    }
+
+    const usedSignals = Array.from(
+      new Set(
+        terms
+          .flatMap((term) => term)
+          .map((signal) => Number(signal))
+      )
+    ).sort((a, b) => a - b);
+
+    if (usedSignals.length > 4) {
+      setError(
+        "Deploy supports at most 4 signals. Please choose a mechanism with 4 signals or fewer."
+      );
+      return;
+    }
+
+    setDeploying(true);
+
+    sessionStorage.setItem(
+      "deployData",
+      JSON.stringify({
+        mechanism: result.mechanism,
+        signals: usedSignals,
+      })
+    );
+
+    window.open(
+      `${window.location.origin}${import.meta.env.BASE_URL}?page=deploy`,
+      "_blank"
+    );
+
+    setTimeout(() => {
+      setDeploying(false);
+    }, 1500);
+  }
+
   function renderTerm(term) {
     if (term.length === 0) {
       return <span className="placeholder-text">Build your term here</span>;
@@ -239,23 +285,33 @@ function MechanismDashboard({ numberOfKeys, signals }) {
     ));
   }
 
-  function ProbabilityCards({ result }) {
+  function ProbabilityCards({ result, onDeploy, deploying }) {
     return (
-      <div className="optimal-probabilities">
-        <div className="optimal-probability-card">
-          <span>Successful</span>
-          <strong>{result ? `${result.uniqueness}%` : "-"}</strong>
+      <div className="probability-section">
+        <div className="optimal-probabilities">
+          <div className="optimal-probability-card">
+            <span>Successful</span>
+            <strong>{result ? `${result.uniqueness}%` : "-"}</strong>
+          </div>
+
+          <div className="optimal-probability-card">
+            <span>Not Complete</span>
+            <strong>{result ? `${result.notComplete}%` : "-"}</strong>
+          </div>
+
+          <div className="optimal-probability-card">
+            <span>Not Sybil-Proof</span>
+            <strong>{result ? `${result.notSybilProof}%` : "-"}</strong>
+          </div>
         </div>
 
-        <div className="optimal-probability-card">
-          <span>Not Complete</span>
-          <strong>{result ? `${result.notComplete}%` : "-"}</strong>
-        </div>
-
-        <div className="optimal-probability-card">
-          <span>Not Sybil-Proof</span>
-          <strong>{result ? `${result.notSybilProof}%` : "-"}</strong>
-        </div>
+        <button
+          className="deploy-mechanism-button"
+          onClick={onDeploy}
+          disabled={!result || deploying}
+        >
+          {deploying ? "Deploying..." : "Deploy"}
+        </button>
       </div>
     );
   }
@@ -313,7 +369,13 @@ function MechanismDashboard({ numberOfKeys, signals }) {
               : "Click Compute to find the optimal mechanism"}
           </div>
 
-          <ProbabilityCards result={optimalResult} />
+          <ProbabilityCards
+            result={optimalResult}
+            deploying={deploying}
+            onDeploy={() =>
+              openDeployPage(optimalResult, optimalResult?.terms || [])
+            }
+          />
         </div>
       ) : (
         <div className="manual-builder">
@@ -374,7 +436,16 @@ function MechanismDashboard({ numberOfKeys, signals }) {
             </div>
           </div>
 
-          <ProbabilityCards result={manualResult} />
+          <ProbabilityCards
+            result={manualResult}
+            deploying={deploying}
+            onDeploy={() =>
+              openDeployPage(
+                manualResult,
+                finalMechanism.map((term) => termToSignalList(term))
+              )
+            }
+          />
         </div>
       )}
 

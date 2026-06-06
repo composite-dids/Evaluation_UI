@@ -41,17 +41,41 @@ function KeysDashboard({ keys, setKeys }) {
   }
 
   function updateKeyValue(id, field, value) {
-    const numericValue = value === "" ? "" : Math.max(0, Math.min(100, Number(value)));
-
     setKeys(
-      keys.map((key) =>
-        key.id === id
-          ? {
-              ...key,
-              [field]: numericValue,
-            }
-          : key
-      )
+      keys.map((key) => {
+        if (key.id !== id) return key;
+
+        let numericValue = value === "" ? "" : Number(value);
+
+        if (numericValue !== "") {
+          if (numericValue < 0) numericValue = 0;
+          if (numericValue > 100) numericValue = 100;
+        }
+
+        const currentNotComplete = Number(key.notCompleteness) || 0;
+        const currentNotSybilProof = Number(key.notSybilProof) || 0;
+
+        if (field === "notCompleteness") {
+          const maxAllowed = 100 - currentNotSybilProof;
+
+          if (numericValue !== "" && numericValue > maxAllowed) {
+            numericValue = maxAllowed;
+          }
+        }
+
+        if (field === "notSybilProof") {
+          const maxAllowed = 100 - currentNotComplete;
+
+          if (numericValue !== "" && numericValue > maxAllowed) {
+            numericValue = maxAllowed;
+          }
+        }
+
+        return {
+          ...key,
+          [field]: numericValue,
+        };
+      })
     );
   }
 

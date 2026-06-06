@@ -1,3 +1,6 @@
+# Python local env
+venv/
+
 # Frontend dependencies
 frontend/node_modules/
 node_modules/
