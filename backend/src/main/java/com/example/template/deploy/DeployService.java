@@ -18,7 +18,7 @@ public class DeployService {
 
         String deployScriptPath = System.getenv().getOrDefault(
                 "DEPLOY_SCRIPT_PATH",
-                "contracts/scripts/deploy.sh"
+                "./contracts/scripts/deploy.sh"
         );
 
         try {
