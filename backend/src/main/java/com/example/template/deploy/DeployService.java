@@ -16,18 +16,15 @@ public class DeployService {
     public DeployResponse runDeployment(DeployRequest request) {
         validateRequest(request);
 
-        String deployScriptPath = System.getenv().getOrDefault(
-                "DEPLOY_SCRIPT_PATH",
-                "./contracts/scripts/deploy.sh"
-        );
+        File deployScript = findDeployScript();
 
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "bash",
-                    deployScriptPath
+                    deployScript.getAbsolutePath()
             );
 
-            processBuilder.directory(new File("."));
+            processBuilder.directory(deployScript.getParentFile());
             processBuilder.redirectErrorStream(true);
 
             Process process = processBuilder.start();
@@ -76,6 +73,34 @@ public class DeployService {
         } catch (Exception error) {
             throw new RuntimeException(error.getMessage(), error);
         }
+    }
+
+    private File findDeployScript() {
+        String envPath = System.getenv("DEPLOY_SCRIPT_PATH");
+
+        List<String> candidates = new ArrayList<>();
+
+        if (envPath != null && !envPath.isBlank()) {
+            candidates.add(envPath);
+        }
+
+        candidates.add("contracts/scripts/deploy.sh");
+        candidates.add("../contracts/scripts/deploy.sh");
+        candidates.add("backend/contracts/scripts/deploy.sh");
+        candidates.add("./contracts/scripts/deploy.sh");
+        candidates.add("./backend/contracts/scripts/deploy.sh");
+
+        for (String candidate : candidates) {
+            File file = new File(candidate);
+
+            if (file.exists() && file.isFile()) {
+                return file;
+            }
+        }
+
+        throw new RuntimeException(
+                "Could not find deploy.sh. Checked paths: " + String.join(", ", candidates)
+        );
     }
 
     private void validateRequest(DeployRequest request) {
