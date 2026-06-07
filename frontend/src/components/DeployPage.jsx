@@ -39,7 +39,7 @@ function DeployPage() {
     );
   }
 
-  const { mechanism, signals } = deployData;
+  const { mechanism, signals, terms } = deployData;
 
   function updateAssignment(signalNumber, value) {
     setAssignments({
@@ -99,6 +99,7 @@ function DeployPage() {
           mechanism,
           signals,
           assignments,
+          terms,
         }),
       });
 

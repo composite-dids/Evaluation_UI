@@ -244,6 +244,7 @@ function MechanismDashboard({ numberOfKeys, signals }) {
       JSON.stringify({
         mechanism: result.mechanism,
         signals: usedSignals,
+        terms,
       })
     );
 

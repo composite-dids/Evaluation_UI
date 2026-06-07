@@ -6,6 +6,7 @@ import java.util.Map;
 public record DeployRequest(
         String mechanism,
         Map<String, String> assignments,
-        List<Integer> signals
+        List<Integer> signals,
+        List<List<Integer>> terms
 ) {
 }

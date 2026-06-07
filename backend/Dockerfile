@@ -24,7 +24,7 @@ COPY --from=build /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
 
 COPY contracts ./contracts
 
-RUN chmod +x ./contracts/scripts/deploy.sh
+RUN chmod +x ./contracts/scripts/*.sh
 
 EXPOSE 8080
 
